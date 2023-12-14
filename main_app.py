@@ -19,7 +19,7 @@ from io import BytesIO
 from keras.applications.inception_v3 import InceptionV3, decode_predictions
 
 # backend setup
-backend_endpoint = "https://photopocalypse-backend-pv3yviodlq-ew.a.run.app"
+backend_endpoint = "https://photopocalypse-backend2-pv3yviodlq-ew.a.run.app"
 
 # Initialize the InceptionV3 model
 inception_model = InceptionV3(weights='imagenet')
