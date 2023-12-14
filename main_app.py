@@ -18,7 +18,8 @@ from io import BytesIO
 
 from keras.applications.inception_v3 import InceptionV3, decode_predictions
 
-# Other imports...
+# backend setup
+backend_endpoint = "https://photopocalypse-v2-pv3yviodlq-od.a.run.app"
 
 # Initialize the InceptionV3 model
 inception_model = InceptionV3(weights='imagenet')
@@ -159,7 +160,7 @@ def display_image_groups(image_groups):
 
 # Function to send file to server
 def send_file_to_server(file):
-    url = 'https://phurge-api-ieuwqkua2q-ew.a.run.app/upload-image/'
+    url = f'{backend_endpoint}/upload-image/'
     files = {'file': (file.name, file, 'multipart/form-data')}
     response = requests.post(url, files=files)
     return response
@@ -174,7 +175,7 @@ def image_to_base64(image):
 
 # Add this new function to send selected files to the deblur API
 def deblur_image(file):
-    url = 'https://phurge-api-ieuwqkua2q-ew.a.run.app/upscale-images/'
+    url = f'{backend_endpoint}/upscale-images/'
     response = requests.post(url)
     return response  # io.BytesIO(postprocessed_image)
 
