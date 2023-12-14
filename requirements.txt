@@ -1,0 +1,12 @@
+streamlit
+streamlit_option_menu
+requests
+numpy
+pandas
+scikit-learn
+tensorflow
+keras
+requests
+google-api-python-client
+hdbscan
+matplotlib
