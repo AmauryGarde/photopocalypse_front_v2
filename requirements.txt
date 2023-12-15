@@ -1,12 +1,11 @@
 streamlit
 streamlit_option_menu
 requests
-numpy
+# numpy
 pandas
-scikit-learn
-tensorflow
-keras
-requests
+# scikit-learn
+# tensorflow
+# keras
 google-api-python-client
-hdbscan
+# hdbscan
 matplotlib

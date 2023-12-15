@@ -1,14 +1,13 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
-import requests
+# import requests
 import os
 import base64
 from googleapiclient.discovery import build
-import numpy as np
-from keras.applications.resnet50 import ResNet50, preprocess_input
-from keras.preprocessing import image
-import hdbscan
-from sklearn.metrics.pairwise import pairwise_distances
+# from keras.applications.resnet50 import ResNet50, preprocess_input
+# from keras.preprocessing import image
+# import hdbscan
+# from sklearn.metrics.pairwise import pairwise_distances
 import pickle
 # from brisque import BRISQUE
 import numpy as np
@@ -16,13 +15,14 @@ import requests
 from PIL import Image
 from io import BytesIO
 
-from keras.applications.inception_v3 import InceptionV3, decode_predictions
+# from keras.applications.inception_v3 import InceptionV3, decode_predictions
 
 # backend setup
-backend_endpoint = "https://photopocalypse-backend2-pv3yviodlq-ew.a.run.app"
+backend_endpoint = "https://photopocalypse-backend3-pv3yviodlq-ew.a.run.app"
+
 
 # Initialize the InceptionV3 model
-inception_model = InceptionV3(weights='imagenet')
+# inception_model = InceptionV3(weights='imagenet')
 
 
 # Initialize BRISQUE model
@@ -30,31 +30,54 @@ inception_model = InceptionV3(weights='imagenet')
 
 
 # Function to calculate BRISQUE score from image URL
-def calculate_brisque_score_from_url(img_url):
+def calculate_brisque_score_from_url(img):
     # Download the image from the URL
-    response = requests.get(img_url)
-    img = Image.open(BytesIO(response.content))
-    img = img.convert('RGB')  # Ensure RGB format
-    img = np.array(img)  # Convert PIL image to numpy array
+    # response = requests.get(img_url)
+    # img = Image.open(BytesIO(response.content))
+    # img = img.convert('RGB')  # Ensure RGB format
+    # img = np.array(img)  # Convert PIL image to numpy array
 
     # Convert RGB to BGR for OpenCV (if needed)
-    img = img[:, :, ::-1]
+    # img = img[:, :, ::-1]
 
-    score = 25  # brisque_model.score(img)
-    return score
+    # score = brisque_model.score(img)
+    # return score
+
+    # Convert PIL image to bytes
+    buffered = BytesIO()
+    img.save(buffered, format="JPEG")
+    img_byte = buffered.getvalue()
+
+    # Send the image to the FastAPI backend
+    response = requests.post(f"{backend_endpoint}/calculate-brisque/",
+                             files={"file": ("filename.jpg", img_byte, "image/jpeg")})
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return "Error: " + str(response.status_code)
 
 
 def get_image_description(url):
     response = requests.get(url)
     img = Image.open(BytesIO(response.content))
-    img = img.resize((299, 299))  # Required size for InceptionV3
-    img_array = image.img_to_array(img)
-    img_array = np.expand_dims(img_array, axis=0)
-    img_array = preprocess_input(img_array)
+    # img = img.resize((299, 299))  # Required size for InceptionV3
+    # img_array = image.img_to_array(img)
+    # img_array = np.expand_dims(img_array, axis=0)
+    # img_array = preprocess_input(img_array)
 
-    preds = inception_model.predict(img_array)
+    # preds = inception_model.predict(img_array)
     # Decode the results into a list of tuples (class, description, probability)
-    return decode_predictions(preds, top=1)[0][0][1]  # Top prediction description
+    # return decode_predictions(preds, top=1)[0][0][1]  # Top prediction description
+    buffered = BytesIO()
+    img.save(buffered, format="JPEG")
+    img_byte = buffered.getvalue()
+
+    response = requests.post(f"{backend_endpoint}/predict-image/",
+                             files={"file": ("filename.jpg", img_byte, "image/jpeg")})
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return "Error: " + str(response.status_code)
 
 
 # Scopes for Google Photos API
@@ -99,6 +122,7 @@ def list_media_items(service, pageSize=100):
     return items
 
 
+"""
 def extract_features_from_url(url, model):
     response = requests.get(url)
     img = Image.open(BytesIO(response.content))
@@ -108,17 +132,34 @@ def extract_features_from_url(url, model):
     img_array = np.expand_dims(img_array, axis=0)
     img_array = preprocess_input(img_array)
     return model.predict(img_array).flatten()
+"""
+
+
+def send_urls_to_backend(image_urls):
+    response = requests.post(f"{backend_endpoint}/cluster-images/", json=image_urls)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return "Error: " + str(response.status_code)
 
 
 def process_images(credentials):
     service = get_google_photos_service(credentials)
     media_items = list_media_items(service)
-    model = ResNet50(weights='imagenet', include_top=False)
-    features_list = [extract_features_from_url(item['baseUrl'], model) for item in media_items]
-    distance_matrix = pairwise_distances(features_list, metric='cosine').astype(np.float64)
-    clusterer = hdbscan.HDBSCAN(metric='precomputed', min_cluster_size=2, min_samples=1, cluster_selection_epsilon=0.1)
-    clusterer.fit(distance_matrix)
-    labels = clusterer.labels_
+    # model = ResNet50(weights='imagenet', include_top=False)
+    # features_list = [extract_features_from_url(item['baseUrl'], model) for item in media_items]
+    # distance_matrix = pairwise_distances(features_list, metric='cosine').astype(np.float64)
+    # clusterer = hdbscan.HDBSCAN(metric='precomputed', min_cluster_size=2, min_samples=1, cluster_selection_epsilon=0.1)
+    # clusterer.fit(distance_matrix)
+    # labels = clusterer.labels_
+
+    # Extract URLs
+    image_urls = [item['baseUrl'] for item in media_items]
+
+    # Send URLs to backend and get clustering results
+    clustering_results = send_urls_to_backend(image_urls)
+    labels = clustering_results["labels"]
+    distance_matrix = np.array(clustering_results["distance_matrix"])
 
     image_groups = {}
     for i, label in enumerate(labels):
@@ -155,7 +196,7 @@ def display_image_groups(image_groups):
             for col, img_url in zip(cols, images):
                 img = Image.open(BytesIO(requests.get(img_url).content))
                 col.image(img, use_column_width=True)
-                brisque_score = calculate_brisque_score_from_url(img_url)
+                brisque_score = calculate_brisque_score_from_url(img)
                 col.write(f"BRISQUE Score: {brisque_score:.2f}")
 
 
