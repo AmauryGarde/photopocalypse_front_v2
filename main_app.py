@@ -3,12 +3,12 @@ from streamlit_option_menu import option_menu
 # import requests
 import os
 import base64
-from googleapiclient.discovery import build
+# from googleapiclient.discovery import build
 # from keras.applications.resnet50 import ResNet50, preprocess_input
 # from keras.preprocessing import image
 # import hdbscan
 # from sklearn.metrics.pairwise import pairwise_distances
-import pickle
+# import pickle
 # from brisque import BRISQUE
 import numpy as np
 import requests
@@ -18,7 +18,7 @@ from io import BytesIO
 # from keras.applications.inception_v3 import InceptionV3, decode_predictions
 
 # backend setup
-backend_endpoint = "https://photopocalypse-backend3-pv3yviodlq-ew.a.run.app"
+backend_endpoint = "https://photopocalypse-instance-pv3yviodlq-ew.a.run.app"
 
 
 # Initialize the InceptionV3 model
@@ -110,10 +110,10 @@ st.markdown(
 
 
 # Function definitions for PhotoUnion
-def get_google_photos_service(token):
-    creds = pickle.load(token)
-
-    return build('photoslibrary', 'v1', credentials=creds, static_discovery=False)
+# def get_google_photos_service(token):
+#     creds = pickle.load(token)
+#
+#     return build('photoslibrary', 'v1', credentials=creds, static_discovery=False)
 
 
 def list_media_items(service, pageSize=100):
@@ -133,9 +133,11 @@ def list_media_items(service, pageSize=100):
 #     return model.predict(img_array).flatten()
 
 
-
-def send_urls_to_backend(image_urls):
-    response = requests.post(f"{backend_endpoint}/cluster-images/", json=image_urls)
+def send_creds_to_backend(file_bytes):
+    response = requests.post(
+        "http://yourserver:port/upload-credentials/",
+        files={"file": ("token.pickle", file_bytes, "application/octet-stream")}
+    )
     if response.status_code == 200:
         return response.json()
     else:
@@ -143,8 +145,8 @@ def send_urls_to_backend(image_urls):
 
 
 def process_images(credentials):
-    service = get_google_photos_service(credentials)
-    media_items = list_media_items(service)
+    # service = get_google_photos_service(credentials)
+    # media_items = list_media_items(service)
     # model = ResNet50(weights='imagenet', include_top=False)
     # features_list = [extract_features_from_url(item['baseUrl'], model) for item in media_items]
     # distance_matrix = pairwise_distances(features_list, metric='cosine').astype(np.float64)
@@ -153,12 +155,12 @@ def process_images(credentials):
     # labels = clusterer.labels_
 
     # Extract URLs
-    image_urls = [item['baseUrl'] for item in media_items]
-    print(image_urls)
+    # image_urls = [item['baseUrl'] for item in media_items]
+    # print(image_urls)
 
     # Send URLs to backend and get clustering results
-    clustering_results = send_urls_to_backend(image_urls)
-    print(clustering_results)
+    clustering_results = send_creds_to_backend(credentials)
+    # print(clustering_results)
     labels = clustering_results["labels"]
     distance_matrix = np.array(clustering_results["distance_matrix"])
 
