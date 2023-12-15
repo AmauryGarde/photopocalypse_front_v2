@@ -154,6 +154,7 @@ def process_images(credentials):
 
     # Extract URLs
     image_urls = [item['baseUrl'] for item in media_items]
+    print(image_urls)
 
     # Send URLs to backend and get clustering results
     clustering_results = send_urls_to_backend(image_urls)
